@@ -1,11 +1,28 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from config.settings import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from config.settings import (
+    FIRST_SUPERUSER_EMAIL,
+    FIRST_SUPERUSER_FIRST_NAME,
+    FIRST_SUPERUSER_LAST_NAME,
+    FIRST_SUPERUSER_PASSWORD,
+)
+from users import crud
+from users.constants import RoleEnum
+from users.models import User
+from users.schemas import UserStafCreateSchema
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+def init_db(db: Session) -> None:
+    user = db.execute(select(User).where(User.email == FIRST_SUPERUSER_EMAIL)).first()
+    if not user:
+        user_in = UserStafCreateSchema(
+            email=FIRST_SUPERUSER_EMAIL,
+            password=FIRST_SUPERUSER_PASSWORD,
+            first_name=FIRST_SUPERUSER_FIRST_NAME,
+            last_name=FIRST_SUPERUSER_LAST_NAME,
+            is_active=True,
+            is_superuser=True,
+            role=RoleEnum.ADMIN,
+        )
+        user = crud.create_user(db=db, schema=user_in)

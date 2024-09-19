@@ -12,8 +12,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from db.base import DATABASE_URL, Base
-from users.models import Role, User
+from db.config import DATABASE_URL, Base
+from users.models import User
 
 # add your model's MetaData object here
 # for 'autogenerate' support
