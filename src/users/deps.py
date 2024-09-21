@@ -59,17 +59,8 @@ def get_current_user(db: SessionDep, token: TokenDep) -> User:
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def get_current_active_role_admin(current_user: CurrentUser) -> User:
+def get_current_role_admin(current_user: CurrentUser) -> User:
     if not current_user.role == RoleEnum.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User doesn't have enough permissions",
-        )
-    return current_user
-
-
-def get_current_active_role_user(current_user: CurrentUser) -> User:
-    if not current_user.role == RoleEnum.USER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User doesn't have enough permissions",

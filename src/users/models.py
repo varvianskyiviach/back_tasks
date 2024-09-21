@@ -1,7 +1,11 @@
 from sqlalchemy import Boolean, Column, Enum, Integer, String
+from sqlalchemy.orm import relationship
 
 from db.config import Base
+from tasks.models import Task  # noqa: F401, F403
 from users.constants import RoleEnum
+
+__all__ = ("User",)
 
 
 class User(Base):
@@ -15,3 +19,6 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.USER)
+
+    tasks = relationship("Task", back_populates="responsible_person")
+    tasks_assignee = relationship("Task", secondary="task_assignees", back_populates="assignees")

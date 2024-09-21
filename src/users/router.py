@@ -1,9 +1,9 @@
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from users import crud
-from users.deps import SessionDep, get_current_active_role_admin
+from users.deps import SessionDep, get_current_role_admin
 from users.models import User
 from users.schemas import (
     Message,
@@ -17,11 +17,11 @@ from users.schemas import (
 router = APIRouter(prefix="/users")
 
 
-@router.get("/", dependencies=[Depends(get_current_active_role_admin)])
-def list_users(db: SessionDep) -> Any:
+@router.get("/", dependencies=[Depends(get_current_role_admin)])
+def list(db: SessionDep) -> Any:
     users: list[User] = crud.get_users(db=db)
 
-    users_results: list[UserSchema] = []
+    users_results: List[UserSchema] = []
 
     for user in users:
         users_results.append(UserSchema.model_validate(user))
@@ -29,7 +29,7 @@ def list_users(db: SessionDep) -> Any:
     return UserMultiResponseScema(results=users_results)
 
 
-@router.get("/{user_id}", dependencies=[Depends(get_current_active_role_admin)])
+@router.get("/{user_id}", dependencies=[Depends(get_current_role_admin)])
 def get_user_by_id(db: SessionDep, user_id: int) -> Any:
     user = db.get(User, user_id)
     if not user:
@@ -55,9 +55,9 @@ def create(db: SessionDep, schema: UserCreateSchema) -> Any:
 
 @router.patch(
     "/{user_id}",
-    dependencies=[Depends(get_current_active_role_admin)],
+    dependencies=[Depends(get_current_role_admin)],
 )
-def update_user(db: SessionDep, user_id: int, user_in: UserUpdateSchema) -> Any:
+def update(db: SessionDep, user_id: int, user_in: UserUpdateSchema) -> Any:
 
     db_user = db.get(User, user_id)
     if not db_user:
@@ -78,11 +78,11 @@ def update_user(db: SessionDep, user_id: int, user_in: UserUpdateSchema) -> Any:
 
 
 @router.delete("/{user_id}")
-def delete_user(
+def delete(
     db: SessionDep,
     user_id: int,
     current_user: User = Depends(
-        get_current_active_role_admin,
+        get_current_role_admin,
     ),
 ) -> Message:
 

@@ -14,6 +14,7 @@ if config.config_file_name is not None:
 
 from db.config import DATABASE_URL, Base
 from users.models import User
+from tasks.models import Task
 
 # add your model's MetaData object here
 # for 'autogenerate' support
