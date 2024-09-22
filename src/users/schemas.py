@@ -41,7 +41,7 @@ class UserResponseSchema(BaseModel):
     )
 
 
-class UserMultiResponseScema(BaseModel):
+class UserMultiResponseSchema(BaseModel):
     results: list[UserSchema] = Field(
         description="Includes the list of Users response schema",
         default_factory=list,

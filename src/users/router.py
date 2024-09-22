@@ -8,7 +8,7 @@ from users.models import User
 from users.schemas import (
     Message,
     UserCreateSchema,
-    UserMultiResponseScema,
+    UserMultiResponseSchema,
     UserResponseSchema,
     UserSchema,
     UserUpdateSchema,
@@ -26,7 +26,7 @@ def list(db: SessionDep) -> Any:
     for user in users:
         users_results.append(UserSchema.model_validate(user))
 
-    return UserMultiResponseScema(results=users_results)
+    return UserMultiResponseSchema(results=users_results)
 
 
 @router.get("/{user_id}", dependencies=[Depends(get_current_role_admin)])

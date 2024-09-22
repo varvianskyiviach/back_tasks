@@ -1,19 +1,20 @@
 from typing import Any, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import joinedload
 
 from tasks import crud
 from tasks.models import Task
-from tasks.shemas import (
+from tasks.permissions import TaskAccessControl
+from tasks.schemas import (
     Message,
-    TaskCreateShema,
+    TaskCreateSchema,
     TaskMultiResponseSchema,
     TaskResponseSchema,
     TaskSchema,
-    TaskUpdateShema,
+    TaskUpdateSchema,
 )
-from users.constants import RoleEnum
+from tasks.utils import background_email_task
 from users.deps import SessionDep, get_current_role_admin, get_current_user
 from users.models import User
 
@@ -48,7 +49,7 @@ def list(db: SessionDep) -> TaskMultiResponseSchema:
 
 @router.post("/")
 def create(
-    db: SessionDep, schema: TaskCreateShema, current_user: User = Depends(get_current_user)
+    db: SessionDep, schema: TaskCreateSchema, current_user: User = Depends(get_current_user)
 ) -> TaskResponseSchema:
     new_task: Task = crud.create_task(
         db=db,
@@ -61,35 +62,54 @@ def create(
 
 
 @router.patch("/{id}")
-def update(db: SessionDep, id: int, schema: TaskUpdateShema, current_user: User = Depends(get_current_user)) -> Any:
+def update(
+    db: SessionDep,
+    id: int,
+    schema: TaskUpdateSchema,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+) -> Any:
     task: Task = db.get(Task, id)
     if not task:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Task not found",
         )
+    task_access: TaskAccessControl = TaskAccessControl(current_user, task=task, schema=TaskUpdateSchema)
 
-    if current_user.role != RoleEnum.ADMIN:
-        if current_user.id != task.responsible_person_id and not (
-            task.assignees and current_user.id in [assignee.id for assignee in task.assignees]
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Forbidden! Only admin or responsible person or assignee member can change task",
-            )
-    if (
-        schema.priority is not None
-        and current_user.role != RoleEnum.ADMIN
-        and current_user.id != task.responsible_person_id
-    ):
+    if not task_access.access_update_task():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden! Only admin or responsible person or assignee member can change task",
+        )
+    if schema.priority is not None and not task_access.is_admin_user() and not task_access.is_responsible_user():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Only admin or responsible person can change priority."
         )
+    if (
+        schema.responsible_person_id is not None
+        and not task_access.is_admin_user()
+        and not task_access.is_responsible_user()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin or responsible person can change responsible person.",
+        )
+
+    previous_status = task.status
 
     updated_task: Task = crud.update_task(
         db=db,
         task=task,
         schema=schema,
+    )
+
+    background_email_task(
+        db=db,
+        id=id,
+        previous_status=previous_status,
+        current_status=updated_task.status,
+        background_tasks=background_tasks,
     )
 
     return TaskResponseSchema(result=TaskSchema.model_validate(updated_task))

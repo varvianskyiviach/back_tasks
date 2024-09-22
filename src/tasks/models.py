@@ -27,7 +27,7 @@ class Task(Base):
 
     responsible_person_id = Column(Integer, ForeignKey("users.id"))
 
-    responsible_person = relationship("User", back_populates="tasks")
+    responsible_person = relationship("User", back_populates="tasks", cascade="none")
     assignees = relationship(
         "User",
         secondary=task_assignees,

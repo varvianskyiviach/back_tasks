@@ -2,12 +2,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from tasks.models import Task
-from tasks.shemas import TaskCreateShema, TaskUpdateShema
+from tasks.schemas import TaskCreateSchema, TaskUpdateSchema
 from users.constants import roles
 from users.models import User
 
 
-def create_task(db: Session, schema: TaskCreateShema, current_user: User) -> Task:
+def create_task(db: Session, schema: TaskCreateSchema, current_user: User) -> Task:
     if current_user.role == roles.RoleEnum.USER:
         user_id = current_user.id
     elif not schema.responsible_person_id:
@@ -38,7 +38,7 @@ def create_task(db: Session, schema: TaskCreateShema, current_user: User) -> Tas
     return task_in_db
 
 
-def update_task(db: Session, task: Task, schema: TaskUpdateShema) -> Task:
+def update_task(db: Session, task: Task, schema: TaskUpdateSchema) -> Task:
     task_data: dict = schema.model_dump(exclude_unset=True)
 
     for key, value in task_data.items():

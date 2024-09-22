@@ -7,16 +7,16 @@ from users.schemas import UserSchema
 class TaskBaseSchema(BaseModel):
     title: str
     description: str
-    priority: TaskPriorityEnum = Field(default=TaskPriorityEnum.LOW)
+    priority: TaskPriorityEnum
     responsible_person_id: int | None = Field(default=None)
-    status: TaskStatusEnum = Field(default=TaskStatusEnum.TODO)
+    status: TaskStatusEnum
 
 
-class TaskCreateShema(TaskBaseSchema):
+class TaskCreateSchema(TaskBaseSchema):
     assignees: list[int] | None = Field(default=None)
 
 
-class TaskUpdateShema(BaseModel):
+class TaskUpdateSchema(BaseModel):
     title: str | None = Field(default=None)
     description: str | None = Field(default=None)
     priority: TaskPriorityEnum | None = Field(default=None)
@@ -25,11 +25,17 @@ class TaskUpdateShema(BaseModel):
     assignees: list[int] | None = Field(default=None)
 
 
+class Message(BaseModel):
+    message: str
+
+
 class TaskSchema(BaseModel):
     id: int
     title: str
     responsible_person: UserSchema | None
     assignees: list[UserSchema]
+    status: TaskStatusEnum
+    priority: TaskPriorityEnum
 
     class Config:
         from_attributes = True
@@ -46,7 +52,3 @@ class TaskMultiResponseSchema(BaseModel):
         description="Includes the list of Users response schema",
         default_factory=list,
     )
-
-
-class Message(BaseModel):
-    message: str

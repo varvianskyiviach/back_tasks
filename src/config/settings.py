@@ -1,6 +1,10 @@
 from os import getenv
+from pathlib import Path
 
 from config.utils import str_to_bool
+
+SRC_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = SRC_DIR.parent
 
 DEBUG = str_to_bool(val=getenv("DEBUG", default="0"))
 
