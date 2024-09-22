@@ -8,5 +8,22 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  app:
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "alembic upgrade head && python src/initial_data.py && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    image: tasks_backend
+    container_name: tasks_app
+    env_file: .env
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app/
+    ports:
+      - 8000:8000
+
 volumes:
   pg_data:
